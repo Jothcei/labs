@@ -1,10 +1,15 @@
 import re
+
+def binary(text):
+
+    return re.fullmatch("[01]+", text) is not None
+
 value = input("Введите двоичное число: ")
 
-match = re.fullmatch("[01]+", value)
+if binary(value):
 
-if match is None:
-    print("Введите хотя бы одну цифру. Допустимы только 0 и 1.")
+    print("Это двоичное число.")
 
 else:
-    print("Это двоичное число.")
+    
+    print("Введите хотя бы одну цифру. Допустимы только 0 и 1.")
