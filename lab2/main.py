@@ -25,8 +25,12 @@ def main():
 
 
     if path:
-        with open(path, "r", encoding="utf-8") as file:
-            text = file.read()
+        try:
+            with open(path, "r", encoding="utf-8") as file:
+                text = file.read()
+        except (OSError, UnicodeError):
+            print("Не удалось прочитать файл. Проверьте путь.")
+            return
 
     else:
         text = input("Введите текст для поиска: ")
