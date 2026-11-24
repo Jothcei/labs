@@ -2,28 +2,37 @@ import re
 
 
 def binary(text):
-
     return re.fullmatch("[01]+", text) is not None
 
-value = input("Введите двоичное число: ")
+
+def find_binary(text):
+    return re.findall(r"\b[01]+\b", text)
 
 
-if binary(value):
-    print("Это двоичное число.")
+def main():
 
-else:
-    print("Введите хотя бы одну цифру. Допустимы только 0 и 1.")
+    value = input("Введите двоичное число: ")
 
 
-path = input("Путь к файлу (Enter — ввести текст): ")
+    if binary(value):
+        print("Это двоичное число.")
+
+    else:
+        print("Введите хотя бы одну цифру. Допустимы только 0 и 1.")
 
 
-if path:
-    with open(path, "r", encoding="utf-8") as file:
-        text = file.read()
-
-else:
-    text = input("Введите текст для поиска: ")
+    path = input("Путь к файлу (Enter — ввести текст): ")
 
 
-print(re.findall(r"\b[01]+\b", text))
+    if path:
+        with open(path, "r", encoding="utf-8") as file:
+            text = file.read()
+
+    else:
+        text = input("Введите текст для поиска: ")
+
+
+    print(find_binary(text))   
+
+if __name__ == "__main__":
+    main()
