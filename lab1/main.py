@@ -62,7 +62,37 @@ class Cart:
             total += item.subtotal()
         return total    
 
-    
+class Order:
+    def __init__(self, number: int, cart: Cart) -> None:
+        if not cart.items:
+            raise ValueError("Корзина не может быть пустой.")
+
+        self.number = number
+        self.items = []
+        for item in cart.items.values():
+            self.items.append({
+                "sku": item.product.sku,
+                "name": item.product.name,
+                "price": item.product.price,
+                "quantity": item.quantity,
+            })
+        self.total = cart.total()
+        
+def checkout(catalog: Catalog, cart: Cart, number: int) -> Order:
+    checked_cart = Cart()
+    for item in cart.items.values():
+        product = catalog.get(item.product.sku)
+        checked_cart.set_quantity(product, item.quantity)
+
+    order = Order(number, checked_cart)
+
+    for item in checked_cart.items.values():
+        item.product.stock -= item.quantity
+
+    cart.items.clear()
+    return order
+
+
 try:
     product = Product("M-01", "Mouse", 1500, 5)
     catalog = Catalog()
@@ -72,8 +102,14 @@ try:
     print(catalog.get("M-01").price)
 
     cart = Cart()
-    cart.set_quantity(catalog.get("M-01"), 6)
+    cart.set_quantity(catalog.get("M-01"), 2)
     print(cart.total())
+
+    order = checkout(catalog, cart, 1)
+    print("Заказ", order.number, "на сумму", order.total, "руб.")  
+
+    print("Остаток на складе:", catalog.get("M-01").stock)
+    print("Позиций в корзине:", len(cart.items))  
 
 except (ValueError, CatalogError) as error:
     print(error)
