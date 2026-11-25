@@ -1,4 +1,5 @@
 import json
+import xml.etree.ElementTree as ET
 
 
 class Product:
@@ -136,6 +137,38 @@ def load_json(path: str) -> Catalog:
     return catalog_from_data(rows)
 
 
+def save_xml(catalog: Catalog, path: str) -> None:
+    root = ET.Element("catalog")
+    for row in catalog_to_data(catalog):
+        ET.SubElement(root, "product", {
+            "sku": row["sku"],
+            "name": row["name"],
+            "price": str(row["price"]),
+            "stock": str(row["stock"]),
+        })
+
+    ET.indent(root, space="  ")
+    ET.ElementTree(root).write(path, encoding="utf-8", xml_declaration=True)
+
+
+def load_xml(path: str) -> Catalog:
+    root = ET.parse(path).getroot()
+    if root.tag != "catalog":
+        raise ValueError("В XML ожидается корневой элемент catalog.")
+
+    rows = []
+    for element in root:
+        if element.tag != "product":
+            raise ValueError("В каталоге ожидаются элементы product.")
+        rows.append({
+            "sku": element.attrib["sku"],
+            "name": element.attrib["name"],
+            "price": int(element.attrib["price"]),
+            "stock": int(element.attrib["stock"]),
+        })
+    return catalog_from_data(rows)
+
+
 try:
     product = Product("M-01", "Mouse", 1500, 5)
     catalog = Catalog()
@@ -161,5 +194,11 @@ try:
     print("Из JSON:", loaded_product.name, loaded_product.price, loaded_product.stock)
 
 
-except (ValueError, CatalogError, OSError, KeyError, TypeError) as error:
+    save_xml(catalog, "lab1/catalog.xml")
+    xml_catalog = load_xml("lab1/catalog.xml")
+    xml_product = xml_catalog.get("M-01")
+    print("Из XML:", xml_product.name, xml_product.price, xml_product.stock)
+
+
+except (ValueError, CatalogError, OSError, KeyError, TypeError, ET.ParseError) as error:
     print(error)
