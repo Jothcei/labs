@@ -1,3 +1,6 @@
+import json
+
+
 class Product:
     def __init__(self, sku, name, price, stock):
         if price <= 0:
@@ -11,8 +14,10 @@ class Product:
         self.price = price
         self.stock = stock
 
+
 class CatalogError(Exception):
     pass
+
 
 class Catalog:
     def __init__(self):
@@ -36,6 +41,7 @@ class Catalog:
         self.get(sku)
         del self.products[sku]
 
+
 class CartItem:
     def __init__(self, product: Product, quantity: int) -> None:
         if quantity <= 0:
@@ -45,6 +51,7 @@ class CartItem:
 
     def subtotal(self) -> int:
         return self.product.price * self.quantity
+
  
 class Cart:
     def __init__(self) -> None:
@@ -62,6 +69,7 @@ class Cart:
             total += item.subtotal()
         return total    
 
+
 class Order:
     def __init__(self, number: int, cart: Cart) -> None:
         if not cart.items:
@@ -77,6 +85,7 @@ class Order:
                 "quantity": item.quantity,
             })
         self.total = cart.total()
+
         
 def checkout(catalog: Catalog, cart: Cart, number: int) -> Order:
     checked_cart = Cart()
@@ -91,6 +100,40 @@ def checkout(catalog: Catalog, cart: Cart, number: int) -> Order:
 
     cart.items.clear()
     return order
+
+
+def catalog_to_data(catalog: Catalog) -> list[dict]:
+    rows = []
+    for product in catalog.products.values():
+        rows.append({
+            "sku": product.sku,
+            "name": product.name,
+            "price": product.price,
+            "stock": product.stock,
+        })
+    return rows
+
+
+def save_json(catalog: Catalog, path: str) -> None:
+    with open(path, "w", encoding="utf-8") as file:
+        json.dump(catalog_to_data(catalog), file, ensure_ascii=False, indent=2)
+
+
+def catalog_from_data(rows: list[dict]) -> Catalog:
+    if not isinstance(rows, list):
+        raise ValueError("В файле должен быть список товаров.")
+
+    catalog = Catalog()
+    for row in rows:
+        product = Product(row["sku"], row["name"], row["price"], row["stock"])
+        catalog.add(product)
+    return catalog
+
+
+def load_json(path: str) -> Catalog:
+    with open(path, "r", encoding="utf-8") as file:
+        rows = json.load(file)
+    return catalog_from_data(rows)
 
 
 try:
@@ -111,5 +154,12 @@ try:
     print("Остаток на складе:", catalog.get("M-01").stock)
     print("Позиций в корзине:", len(cart.items))  
 
-except (ValueError, CatalogError) as error:
+    save_json(catalog, "lab1/catalog.json")    
+
+    loaded_catalog = load_json("lab1/catalog.json")
+    loaded_product = loaded_catalog.get("M-01")
+    print("Из JSON:", loaded_product.name, loaded_product.price, loaded_product.stock)
+
+
+except (ValueError, CatalogError, OSError, KeyError, TypeError) as error:
     print(error)
