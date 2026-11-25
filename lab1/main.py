@@ -169,36 +169,96 @@ def load_xml(path: str) -> Catalog:
     return catalog_from_data(rows)
 
 
-try:
-    product = Product("M-01", "Mouse", 1500, 5)
-    catalog = Catalog()
-    catalog.add(product)
+def read_product(sku: str) -> Product:
+    name = input("Название: ").strip()
+    price = int(input("Цена в рублях: "))
+    stock = int(input("Остаток в штуках: "))
+    return Product(sku, name, price, stock)
 
-    catalog.update(Product("M-01", "Mouse", 1700, 5))
-    print(catalog.get("M-01").price)
+
+def main() -> None:
+    catalog = Catalog()
 
     cart = Cart()
-    cart.set_quantity(catalog.get("M-01"), 2)
-    print(cart.total())
+    orders: list[Order] = []
 
-    order = checkout(catalog, cart, 1)
-    print("Заказ", order.number, "на сумму", order.total, "руб.")  
+    while True:
+        print("\n1 — Каталог | 2 — Добавить | 3 — Изменить | 4 — Удалить | 0 — Выход")
+        print("5 — Указать количество | 6 — Корзина | 7 — Оформить заказ")
+        print("8 — Сохранить каталог | 9 — Загрузить каталог")
+        
+        choice = input("Команда: ").strip()
 
-    print("Остаток на складе:", catalog.get("M-01").stock)
-    print("Позиций в корзине:", len(cart.items))  
+        try:
+            if choice == "0":
+                break
 
-    save_json(catalog, "lab1/catalog.json")    
+            elif choice == "1":
+                if not catalog.products:
+                    print("Каталог пуст.")
+                for product in catalog.products.values():
+                    print(product.sku, product.name, product.price, product.stock)
 
-    loaded_catalog = load_json("lab1/catalog.json")
-    loaded_product = loaded_catalog.get("M-01")
-    print("Из JSON:", loaded_product.name, loaded_product.price, loaded_product.stock)
+            elif choice == "2":
+                sku = input("Артикул: ").strip()
+                catalog.add(read_product(sku))
+                print("Товар добавлен.")
+
+            elif choice == "3":
+                sku = input("Артикул: ").strip()
+                catalog.update(read_product(sku))
+                print("Товар изменён.")
+
+            elif choice == "4":
+                sku = input("Артикул: ").strip()
+                catalog.remove(sku)
+                print("Товар удалён.")
+
+            elif choice == "5":
+                sku = input("Артикул: ").strip()
+                product = catalog.get(sku)
+                quantity = int(input("Количество: "))
+                cart.set_quantity(product, quantity)
+                print("Количество в корзине обновлено.")
+
+            elif choice == "6":
+                if not cart.items:
+                    print("Корзина пуста.")
+                for item in cart.items.values():
+                    print(item.product.name, item.quantity, item.subtotal())
+                print("Итого:", cart.total(), "руб.")
+
+            elif choice == "7":
+                order = checkout(catalog, cart, len(orders) + 1)
+                orders.append(order)
+                print(f"Заказ №{order.number} оформлен. Сумма {order.total} руб.")
+
+            elif choice in ("8", "9"):
+                path = input("Путь к файлу (.json или .xml): ").strip()
+                extension_path = path.lower()
+
+                if extension_path.endswith(".json"):
+                    save_catalog, load_catalog = save_json, load_json
+                elif extension_path.endswith(".xml"):
+                    save_catalog, load_catalog = save_xml, load_xml
+                else:
+                    raise ValueError("Укажите файл с расширением .json или .xml.")
+
+                if choice == "8":
+                    save_catalog(catalog, path)
+                    print("Каталог сохранён.")
+                else:
+                    catalog = load_catalog(path)
+                    cart.items.clear()
+                    print("Каталог загружен. Корзина очищена.")
+
+                    
+            else:
+                print("Неизвестная команда.")
+        except (ValueError, CatalogError, OSError, KeyError, TypeError, ET.ParseError) as error:
+            print("Ошибка:", error)
 
 
-    save_xml(catalog, "lab1/catalog.xml")
-    xml_catalog = load_xml("lab1/catalog.xml")
-    xml_product = xml_catalog.get("M-01")
-    print("Из XML:", xml_product.name, xml_product.price, xml_product.stock)
+if __name__ == "__main__":
+    main()
 
-
-except (ValueError, CatalogError, OSError, KeyError, TypeError, ET.ParseError) as error:
-    print(error)
