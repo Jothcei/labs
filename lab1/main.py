@@ -19,18 +19,46 @@ class Catalog:
         self.products = {}
 
     def add(self, product):
+        if product.sku in self.products:
+            raise CatalogError(f"Артикул {product.sku} уже есть в каталоге.")
         self.products[product.sku] = product
 
     def get(self, sku: str) -> Product:
         if sku not in self.products:
             raise CatalogError(f"Товар с артикулом {sku} не найден.")
         return self.products[sku]        
-        
+    
+    def update(self, product: Product) -> None:
+        self.get(product.sku)
+        self.products[product.sku] = product
+
+    def remove(self, sku: str) -> None:
+        self.get(sku)
+        del self.products[sku]
+
+class CartItem:
+    def __init__(self, product: Product, quantity: int) -> None:
+        if quantity <= 0:
+            raise ValueError("Количество должно быть больше нуля.")
+        self.product = product
+        self.quantity = quantity
+
+    def subtotal(self) -> int:
+        return self.product.price * self.quantity
+ 
+    
 try:
     product = Product("M-01", "Mouse", 1500, 5)
     catalog = Catalog()
     catalog.add(product)
 
+    catalog.update(Product("M-01", "Mouse", 1700, 5))
+    print(catalog.get("M-01").price)
+
+    item = CartItem(catalog.get("M-01"), 2)
+    print(item.subtotal())
+
+    catalog.remove("M-01")
     print(catalog.get("M-01").name)
 
 except (ValueError, CatalogError) as error:
