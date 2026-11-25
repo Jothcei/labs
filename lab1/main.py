@@ -46,6 +46,22 @@ class CartItem:
     def subtotal(self) -> int:
         return self.product.price * self.quantity
  
+class Cart:
+    def __init__(self) -> None:
+        self.items: dict[str, CartItem] = {}
+
+    def set_quantity(self, product: Product, quantity: int) -> None:
+        item = CartItem(product, quantity)
+        if quantity > product.stock:
+            raise ValueError("На складе недостаточно товара.")
+        self.items[product.sku] = item
+
+    def total(self) -> int:
+        total = 0
+        for item in self.items.values():
+            total += item.subtotal()
+        return total    
+
     
 try:
     product = Product("M-01", "Mouse", 1500, 5)
@@ -55,11 +71,9 @@ try:
     catalog.update(Product("M-01", "Mouse", 1700, 5))
     print(catalog.get("M-01").price)
 
-    item = CartItem(catalog.get("M-01"), 2)
-    print(item.subtotal())
-
-    catalog.remove("M-01")
-    print(catalog.get("M-01").name)
+    cart = Cart()
+    cart.set_quantity(catalog.get("M-01"), 6)
+    print(cart.total())
 
 except (ValueError, CatalogError) as error:
     print(error)
